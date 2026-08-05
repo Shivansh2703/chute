@@ -1,28 +1,37 @@
 # chute
 
-Public open-source tool: Telegram → Cloudflare Worker → GitHub commits. Drop a thought from
-your phone; it lands as a markdown commit in a repo you own. Born 2026-08-05 as the sanitized
-public twin of the owner's private capture pipeline — the private deployment lives elsewhere,
-keeps running, and is NEVER touched from this repo.
+Telegram → Cloudflare Worker → GitHub commits. Drop a thought from your phone; it lands as a
+markdown commit in a repo you own. This file is repo context for anyone — human or agent —
+making changes here.
 
 ## What is true now
-- Fresh-history repo, one commit lineage, no remote yet. Ship = owner runs SHIP_RUNBOOK.md.
-- 46 tests, `npm test`, no network needed. Keep it that way — tests that need live Telegram or
-  GitHub are wrong here.
-- Scope is capture only: Telegram webhook (text/photo/document/sticker/GIF/voice/video,
-  single-owner filter), `POST /capture` share-sheet lane, `#tg`/`#share` tags,
-  optimistic-locked GitHub commits with 409 retry, optional Whisper transcription.
-  The owner's private system carries more (board sync, prompts, journal); none of it belongs
-  here — adding life-management features to chute is a product decision, ask first.
+- 53 tests, `npm test`, Node 20+. No network, no credentials, no dependencies.
+- Zero dependencies on purpose. Wrangler is invoked via `npx wrangler@latest`, never pinned in
+  `package.json`. If something here ever needs an `npm install`, that is a decision to argue
+  for, not a convenience to add.
+- Every secret and id is read through `envValue` (`src/lib/env.js`) so a paste with a stray
+  newline or wrapping quotes can't cause a silent 401. New config reads follow that rule.
 
-## Laws
-- **PUBLIC repo: zero AI trailers/attribution** in commits, code, or docs. Ever.
-- **No secrets, no owner-specific identifiers.** Config via env/wrangler secrets only. Before
-  any commit: grep for tokens, chat IDs, and the owner's private repo/vault names.
-- **Publishing (push, repo create, release, posts) is owner-only.** Stage runbooks, never run.
-- Tool, not product (owner standing rule 2026-08-05) — public lane is open, but every outward
-  click is still his.
+## Scope
+Capture only: the Telegram webhook (text/photo/document/sticker/GIF/voice/video, single-owner
+filter), the `POST /capture` share-sheet lane, `#tg`/`#share` tags, optimistic-locked GitHub
+commits with 409 retry, optional Whisper transcription.
+
+What happens to a capture file afterwards — organizing, summarizing, reminding, syncing — is
+deliberately out of scope. Those belong in whatever reads the files, not in the thing that
+writes them. Proposing a feature past that line is a product decision: open an issue first.
+
+## Rules
+- **Zero AI trailers or tool attribution** in commits, code, or docs. Ever.
+- **No secrets and no personal identifiers in the tree.** Config comes from env vars and
+  wrangler secrets only. Before any commit, grep for tokens, chat ids, and private repo or
+  vault names.
+- **Tests stay hermetic.** A test that needs live Telegram or GitHub is wrong here — stub the
+  network, as the existing suites do.
+- **Nothing is filed silently.** A capture the worker cannot read still leaves a line saying
+  so. A change that makes some input vanish without a trace is a bug, however tidy it looks.
+- **Releases are the maintainer's call.** Stage the steps, don't run them.
 
 ## Truth sources
-- SHIP_RUNBOOK.md — the staged ship steps and their status.
-- README.md — the product surface; keep honest, no hype, limitations stated.
+- README.md — the product surface; keep it honest, no hype, limitations stated plainly.
+- `test/` — the behaviour contract. If you change what gets filed, a test should say so.
