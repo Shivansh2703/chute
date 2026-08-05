@@ -1,0 +1,44 @@
+# Copy this file to wrangler.toml and fill in the [vars] below.
+# wrangler.toml is gitignored — secrets never belong here regardless; use
+# `wrangler secret put` for those (see README.md "Setup").
+
+name = "chute"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# owner/repo that receives the commits, e.g. "octocat/notes"
+GITHUB_REPO = "your-username/your-vault"
+# branch to commit to (optional, defaults to "main")
+# GITHUB_BRANCH = "main"
+
+# Telegram numeric user id chute will accept messages from. Everyone else's
+# messages are silently dropped. Get yours from @userinfobot.
+OWNER_ID = "000000000"
+
+# Directory + filename pattern for capture files (optional, defaults to
+# "captures" -> captures/<date>.md)
+# CAPTURE_DIR = "captures"
+
+# IANA timezone used for the date in the filename and the HH:MM stamp on each
+# line (optional, defaults to "UTC")
+# CAPTURE_TZ = "America/Toronto"
+
+# Tag appended to lines filed via Telegram / the HTTP share lane (optional)
+# TG_TAG = "#tg"
+# SHARE_TAG = "#share"
+
+# Uncomment to enable voice/video/audio transcription via Cloudflare Workers
+# AI (free tier covers ordinary personal use). Without this binding, media
+# with nothing to read is filed as a stub instead of a transcript.
+# [ai]
+# binding = "AI"
+
+[observability]
+enabled = true
+
+# Secrets (never set here — see README.md "Setup"):
+#   BOT_TOKEN       Telegram bot token, from @BotFather
+#   WEBHOOK_SECRET  random string Telegram echoes back on every webhook call
+#   GITHUB_TOKEN    fine-grained PAT, Contents: Read and write, on GITHUB_REPO only
+#   CAPTURE_TOKEN   bearer token for the POST /capture (share-sheet) lane

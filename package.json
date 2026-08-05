@@ -1,0 +1,16 @@
+{
+  "name": "chute",
+  "version": "0.1.0",
+  "description": "Telegram -> GitHub capture pipeline for Cloudflare Workers. Drop a thought from your phone, it lands as a commit in a repo you own.",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
