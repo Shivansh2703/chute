@@ -103,9 +103,11 @@ Fine-grained tokens → Generate new token.
 ```
 git clone <this-repo-url> chute
 cd chute
-npm install
 cp wrangler.toml.example wrangler.toml
 ```
+
+There is no `npm install` step — `chute` has no dependencies. Wrangler is
+invoked via `npx` below, so you always get the current version.
 
 Edit `wrangler.toml`: set `GITHUB_REPO` to `your-username/your-repo` and
 `OWNER_ID` to the Telegram ID from step 1. `wrangler.toml` is gitignored, so
@@ -114,17 +116,21 @@ these values (not secret, but yours) never get committed.
 **4. Set secrets**
 
 ```
-npx wrangler login
-npx wrangler secret put BOT_TOKEN         # from @BotFather
-npx wrangler secret put WEBHOOK_SECRET    # generate: openssl rand -hex 32
-npx wrangler secret put GITHUB_TOKEN      # from step 2
-npx wrangler secret put CAPTURE_TOKEN     # generate: openssl rand -hex 32 — only needed for the share-sheet lane
+npx wrangler@latest login
+npx wrangler@latest secret put BOT_TOKEN         # from @BotFather
+npx wrangler@latest secret put WEBHOOK_SECRET    # generate: openssl rand -hex 32
+npx wrangler@latest secret put GITHUB_TOKEN      # from step 2
+npx wrangler@latest secret put CAPTURE_TOKEN     # generate: openssl rand -hex 32 — only needed for the share-sheet lane
 ```
+
+Paste artifacts are tolerated: a stray newline or a pair of wrapping quotes
+around any of these is trimmed before use, so a sloppy paste won't leave you
+debugging a silent 401.
 
 **5. Deploy**
 
 ```
-npx wrangler deploy
+npx wrangler@latest deploy
 ```
 
 Note the `*.workers.dev` URL Wrangler prints.
@@ -192,9 +198,13 @@ shape, so anything can consume it:
 ## Development
 
 ```
-npm test           # node --test, no network, no credentials needed
-npx wrangler dev    # run locally against real Telegram/GitHub if you export secrets to .dev.vars
+npm test                  # node --test, no network, no credentials, no dependencies
+npx wrangler@latest dev   # run locally against real Telegram/GitHub if you export secrets to .dev.vars
 ```
+
+Tests need **Node 20 or newer** (Node's built-in test runner became stable in
+20). Nothing else is required — there is no dependency to install, so a clean
+clone can run the suite immediately.
 
 `.dev.vars` (gitignored) can hold local secrets for `wrangler dev`; see
 [Wrangler's docs](https://developers.cloudflare.com/workers/wrangler/) for
