@@ -342,6 +342,33 @@ test('capture endpoint: an outage on the Telegram nudge cannot break the refusal
   }
 });
 
+// The refusal is a data-loss guard; the Telegram nudge is only how the owner
+// hears about it. Gating the guard on OWNER_ID being set would mean a deploy
+// that uses the share lane alone silently files the dead line it exists to
+// refuse.
+test('capture endpoint: the filename refusal does not depend on OWNER_ID being set', async () => {
+  for (const owner of [undefined, '']) {
+    const stub = stubFetch();
+    try {
+      const res = await worker.fetch(capture({ text: 'IMG_3534' }), { ...ENV, OWNER_ID: owner });
+      assert.equal(res.status, 422, `OWNER_ID=${JSON.stringify(owner)}`);
+      assert.equal(JSON.parse(await res.text()).filed, false);
+      assert.equal(
+        stub.calls.filter((c) => c.method === 'PUT').length,
+        0,
+        'a dead filename line must never be filed, configured owner or not',
+      );
+      assert.equal(
+        stub.calls.filter((c) => c.url.includes('/sendMessage')).length,
+        0,
+        'with no owner to reach, there is nobody to nudge',
+      );
+    } finally {
+      stub.restore();
+    }
+  }
+});
+
 test('capture endpoint: configurable tags and directory are honored', async () => {
   const stub = stubFetch();
   try {
