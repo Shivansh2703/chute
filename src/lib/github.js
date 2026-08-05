@@ -2,6 +2,8 @@
  * GitHub Contents API helpers — the write target for captures.
  */
 
+import { envValue } from './env.js';
+
 export class GithubError extends Error {
   constructor(status, body) {
     let short = body;
@@ -34,9 +36,13 @@ function b64decodeUtf8(b64) {
   return new TextDecoder().decode(bytes);
 }
 
+// The token and repo are pasted in by hand (`wrangler secret put`, wrangler.toml),
+// so both go through `envValue` — a wrapping quote or trailing newline here
+// would 401 or 404 every write with a message that points nowhere near the
+// actual mistake.
 export function ghHeaders(env, extra) {
   return {
-    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Authorization: `Bearer ${envValue(env, 'GITHUB_TOKEN')}`,
     'X-GitHub-Api-Version': '2022-11-28',
     'User-Agent': 'chute',
     Accept: 'application/vnd.github+json',
@@ -44,12 +50,16 @@ export function ghHeaders(env, extra) {
   };
 }
 
+function repo(env) {
+  return envValue(env, 'GITHUB_REPO');
+}
+
 function branch(env) {
-  return env.GITHUB_BRANCH || 'main';
+  return envValue(env, 'GITHUB_BRANCH') || 'main';
 }
 
 export async function githubGetFile(path, env) {
-  const url = `https://api.github.com/repos/${env.GITHUB_REPO}/contents/${path}?ref=${branch(env)}`;
+  const url = `https://api.github.com/repos/${repo(env)}/contents/${path}?ref=${branch(env)}`;
   const res = await fetch(url, { headers: ghHeaders(env) });
   if (res.status === 404) return { exists: false };
   if (!res.ok) {
@@ -61,7 +71,7 @@ export async function githubGetFile(path, env) {
 }
 
 export async function githubPutFile(path, content, sha, message, env) {
-  const url = `https://api.github.com/repos/${env.GITHUB_REPO}/contents/${path}`;
+  const url = `https://api.github.com/repos/${repo(env)}/contents/${path}`;
   const body = { message, content: b64encodeUtf8(content), branch: branch(env) };
   if (sha) body.sha = sha;
   const res = await fetch(url, {

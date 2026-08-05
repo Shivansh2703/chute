@@ -31,6 +31,18 @@ function tag(env, name, fallback) {
   return envValue(env, name) || fallback;
 }
 
+// Secrets and ids are pasted into `wrangler secret put` / wrangler.toml, so
+// every read of one goes through `envValue` — a trailing newline or a pair of
+// wrapping quotes must never reach an API call, a token comparison, or the
+// owner check. See src/lib/env.js.
+function botToken(env) {
+  return envValue(env, 'BOT_TOKEN');
+}
+
+function ownerId(env) {
+  return envValue(env, 'OWNER_ID');
+}
+
 function capturePath(dateStr, env) {
   return `${captureDir(env)}/${dateStr}.md`;
 }
@@ -51,7 +63,7 @@ function b64encodeBytes(buffer) {
 // ---- Telegram reply ----
 
 async function tgSendMessage(chatId, text, env) {
-  const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+  const res = await fetch(`https://api.telegram.org/bot${botToken(env)}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text }),
@@ -103,7 +115,7 @@ export function detectMedia(message) {
 }
 
 async function tgGetFile(fileId, env) {
-  const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`;
+  const url = `https://api.telegram.org/bot${botToken(env)}/getFile?file_id=${encodeURIComponent(fileId)}`;
   const res = await fetch(url);
   const json = await res.json().catch(() => null);
   if (!res.ok || !json || !json.ok) {
@@ -114,7 +126,7 @@ async function tgGetFile(fileId, env) {
 }
 
 async function tgDownloadFile(filePath, env) {
-  const url = `https://api.telegram.org/file/bot${env.BOT_TOKEN}/${filePath}`;
+  const url = `https://api.telegram.org/file/bot${botToken(env)}/${filePath}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`file download HTTP ${res.status}`);
   return res.arrayBuffer();
@@ -446,15 +458,20 @@ async function handleCaptureRequest(request, env) {
   if (url && !isHttpUrl(url)) {
     return jsonResponse({ filed: false, error: 'url must be http(s)' }, 400);
   }
-  if (!url && looksLikeCameraFilename(text) && env.OWNER_ID) {
+  if (!url && looksLikeCameraFilename(text)) {
     console.log('status', 'capture_filename_refused');
     // Told over Telegram as well as in the response: whether the caller
-    // surfaces an error is not something this worker can rely on.
-    await tgReply(
-      env.OWNER_ID,
-      `that arrived as a filename (${text}) — the photo itself stayed on your phone, so nothing was filed. Send it over Telegram and it goes in properly.`,
-      env,
-    );
+    // surfaces an error is not something this worker can rely on. The nudge is
+    // best-effort — the refusal itself is the data-loss guard and never depends
+    // on there being an owner to reach.
+    const owner = ownerId(env);
+    if (owner) {
+      await tgReply(
+        owner,
+        `that arrived as a filename (${text}) — the photo itself stayed on your phone, so nothing was filed. Send it over Telegram and it goes in properly.`,
+        env,
+      );
+    }
     return jsonResponse(
       { filed: false, error: 'looks like a photo filename, not a capture — send the photo over Telegram' },
       422,
@@ -484,8 +501,12 @@ export default {
       return new Response(null, { status: 404 });
     }
 
-    const secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
-    if (secret !== env.WEBHOOK_SECRET) {
+    // Same treatment as the /capture lane: paste-tolerant on the stored side,
+    // constant-time on the compare. A secret stored with a stray newline would
+    // otherwise 401 every webhook forever, silently — no reply, no clue.
+    const expected = envValue(env, 'WEBHOOK_SECRET');
+    const presented = request.headers.get('X-Telegram-Bot-Api-Secret-Token') || '';
+    if (!expected || !presented || !(await secretEquals(presented, expected))) {
       return new Response(null, { status: 401 });
     }
 
@@ -504,7 +525,7 @@ export default {
     }
 
     const fromId = message.from && message.from.id;
-    if (Number(fromId) !== Number(env.OWNER_ID)) {
+    if (Number(fromId) !== Number(ownerId(env))) {
       // silently drop strangers — no reply, no logging of their content
       return new Response('ok', { status: 200 });
     }
