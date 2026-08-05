@@ -1,0 +1,24 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 20 is the floor declared in package.json engines; 22 catches anything
+        # that only works on the oldest supported runtime.
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # No install step on purpose: chute has no dependencies, and the suite
+      # makes no network calls. If this ever needs an `npm ci`, something has
+      # been added that does not belong.
+      - run: npm test
