@@ -4,6 +4,10 @@ node_modules/
 wrangler.toml
 .DS_Store
 
+# Local git worktrees live here; they are full copies of the repo and must
+# never be staged into it.
+.claude/worktrees/
+
 # One-time launch checklist, kept out of the published tree — it is the
 # maintainer's own pre-push steps and means nothing to anyone cloning this.
 SHIP_RUNBOOK.md
