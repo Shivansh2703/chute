@@ -3,3 +3,7 @@ node_modules/
 .dev.vars
 wrangler.toml
 .DS_Store
+
+# One-time launch checklist, kept out of the published tree — it is the
+# maintainer's own pre-push steps and means nothing to anyone cloning this.
+SHIP_RUNBOOK.md
