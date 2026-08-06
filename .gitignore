@@ -11,3 +11,4 @@ wrangler.toml
 # One-time launch checklist, kept out of the published tree — it is the
 # maintainer's own pre-push steps and means nothing to anyone cloning this.
 SHIP_RUNBOOK.md
+capture-worker/
