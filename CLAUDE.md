@@ -22,7 +22,8 @@ deliberately out of scope. Those belong in whatever reads the files, not in the 
 writes them. Proposing a feature past that line is a product decision: open an issue first.
 
 ## Rules
-- **Zero AI trailers or tool attribution** in commits, code, or docs. Ever.
+- **Commits, code, and docs carry a single named author only** — no co-author trailers
+  or tool-attribution lines. Ever.
 - **No secrets and no personal identifiers in the tree.** Config comes from env vars and
   wrangler secrets only. Before any commit, grep for tokens, chat ids, and private repo or
   vault names.
