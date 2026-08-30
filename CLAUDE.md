@@ -32,6 +32,20 @@ writes them. Proposing a feature past that line is a product decision: open an i
   so. A change that makes some input vanish without a trace is a bug, however tidy it looks.
 - **Releases are the maintainer's call.** Stage the steps, don't run them.
 
+## Check
+`npm test` — 313 assertions, Node 20+, ~4s, zero installs (no `node_modules` to build: the
+suite has no dependencies and stubs every network call). Proves the Telegram webhook, the
+`/capture` share-sheet lane, filename-refusal logic, and the GitHub commit/retry path all
+still behave. CI runs it on every push and PR to `main`, on Node 20 and 22
+(`.github/workflows/test.yml`).
+
+Red means a real regression, not flakiness — there is no network or timing dependency to
+retry past. Read the failing test name first; it names the behaviour that broke. Never
+comment out or loosen an assertion to get back to green.
+
+Not covered: the Cloudflare Worker deploy itself (`wrangler deploy`), the live Telegram and
+GitHub API calls (all stubbed), and Whisper transcription output quality.
+
 ## Truth sources
 - README.md — the product surface; keep it honest, no hype, limitations stated plainly.
 - `test/` — the behaviour contract. If you change what gets filed, a test should say so.
